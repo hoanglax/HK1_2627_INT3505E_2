@@ -3,3 +3,9 @@
 
 # Bài 2
 ![alt text](B2.png)
+
+# Bài 3
+![alt text](B3.png)
+
+# Bài 4
+![alt text](B4.png)
