@@ -1,63 +1,31 @@
-from flask import Flask, jsonify, request
-from werkzeug.exceptions import HTTPException
+from flask import Flask, jsonify
+from error import ProblemError, register_error_handlers
 
 app = Flask(__name__)
 
-class ProblemError(Exception):
-    def __init__(self, status, title, detail=None, type="about:blank"):
-        self.status = status
-        self.title = title
-        self.detail = detail
-        self.type = type
+register_error_handlers(app)
 
-@app.errorhandler(ProblemError)
-def handle_problem_error(e):
-    data = {
-        "type": e.type,
-        "title": e.title,
-        "status": e.status,
-        "detail": e.detail,
-        "instance": request.path
-    }
-    return jsonify(data), e.status, {"Content-Type": "application/problem+json"}
+USERS = {
+    1: {"id": 1, "name": "John"},
+    2: {"id": 2, "name": "Alice"},
+    3: {"id": 3, "name": "Bob"}
+}
 
-@app.errorhandler(HTTPException)
-def handle_http_error(e):
-    data = {
-        "type": "about:blank",
-        "title": e.name,
-        "status": e.code,
-        "detail": e.description,
-        "instance": request.path
-    }
-    return jsonify(data), e.code, {"Content-Type": "application/problem+json"}
-
-@app.errorhandler(Exception)
-def handle_system_error(e):
-    print("Lỗi Server:", e)
-    data = {
-        "type": "about:blank",
-        "title": "Internal Server Error",
-        "status": 500,
-        "detail": "Đã xảy ra lỗi hệ thống.",
-        "instance": request.path
-    }
-    return jsonify(data), 500, {"Content-Type": "application/problem+json"}
-
-
-@app.route("/resources/<int:id>")
-def get_resource(id):
-    if id != 1:
+@app.get("/users/<int:id>")
+def get_user(id):
+    if id not in USERS:
         raise ProblemError(
             status=404,
-            title="Resource Not Found",
-            detail=f"Không tìm thấy resource với id = {id}"
+            title="User Not Found",
+            type_path="user-not-found",
+            resource_id = id
         )
-    return jsonify({"id": 1, "name": "Item 1"})
+    return jsonify(USERS[id])
 
-@app.route("/test-500")
-def test_500():
-    return 1 / 0
+
+@app.get("/test-500")
+def trigger_500():
+    return 1 / 0  # ZeroDivisionError
 
 
 if __name__ == "__main__":
