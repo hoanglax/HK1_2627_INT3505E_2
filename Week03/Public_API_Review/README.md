@@ -44,6 +44,6 @@ Nhóm 8:
 ![alt text](image.png)
 ---
 
-### Tổng kết điểm phần B (Spotify Web API)
+### Tổng kết (Spotify Web API)
 * **Điểm mạnh:** Thiết kế RESTful nhất quán, quản lý phân trang chuyên nghiệp qua PagingObject, hệ thống bảo mật OAuth 2.0 và Rate Limiting chuẩn mực.
 * **Điểm cần cải tiến:** Mở rộng khả năng lọc multi-field sort động cho các collection thông thường và bổ sung cơ chế sparse fieldsets cho toàn hệ thống.
