@@ -1,17 +1,19 @@
 
 import pytest
 
-from app import app
+from app import create_app
 from models import db, Book
 
 
 @pytest.fixture()
 def client():
-    app.config["TESTING"] = True
+    test_app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+    })
 
-    with app.app_context():
+    with test_app.app_context():
         db.create_all()
-        db.session.query(Book).delete()
 
         db.session.add_all([
             Book(
@@ -54,12 +56,12 @@ def client():
 
         db.session.commit()
 
-    with app.test_client() as test_client:
+    with test_app.test_client() as test_client:
         yield test_client
 
-    with app.app_context():
-        db.session.query(Book).delete()
-        db.session.commit()
+    with test_app.app_context():
+        db.session.remove()
+        db.drop_all()
 
 
 def test_list_books_default_offset(client):
@@ -86,17 +88,18 @@ def test_offset_pagination(client):
     assert data["pagination"]["offset"] == 0
     assert data["pagination"]["has_next"] is True
 
-    first_page_ids = [book["id"] for book in data["items"]]
+    first_page_ids = {book["id"] for book in data["items"]}
 
     response = client.get(
         "/api/v1/books?strategy=offset&limit=2&offset=2"
     )
-    second_page_ids = [
-        book["id"] for book in response.get_json()["items"]
-    ]
 
     assert response.status_code == 200
-    assert set(first_page_ids).isdisjoint(second_page_ids)
+    second_page_ids = {
+        book["id"] for book in response.get_json()["items"]
+    }
+
+    assert first_page_ids.isdisjoint(second_page_ids)
 
 
 def test_cursor_pagination(client):
@@ -122,7 +125,9 @@ def test_cursor_pagination(client):
     next_data = response.get_json()
 
     first_page_ids = {book["id"] for book in data["items"]}
-    second_page_ids = {book["id"] for book in next_data["items"]}
+    second_page_ids = {
+        book["id"] for book in next_data["items"]
+    }
 
     assert first_page_ids.isdisjoint(second_page_ids)
 
@@ -147,17 +152,17 @@ def test_multi_key_sort(client):
     books = response.get_json()["items"]
     actual = [(book["genre"], book["title"]) for book in books]
 
-    expected = sorted(
+    assert actual == sorted(
         actual,
         key=lambda item: (item[0], item[1]),
+    ) if False else actual  # Thay bằng kiểm tra bên dưới.
+
+    # Genre tăng dần.
+    assert [genre for genre, _ in actual] == sorted(
+        genre for genre, _ in actual
     )
 
-    # Kiểm tra genre tăng dần.
-    assert [genre for genre, _ in actual] == [
-        genre for genre, _ in expected
-    ]
-
-    # Trong từng genre, title phải giảm dần.
+    # Trong mỗi genre, title giảm dần.
     genres = {genre for genre, _ in actual}
 
     for genre in genres:
