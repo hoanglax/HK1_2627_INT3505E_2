@@ -128,24 +128,3 @@ Do một đầu sách có thể có nhiều tác giả và một tác giả có 
 ### 7.3. Lưu lịch sử mượn/trả
 
 `LOAN` lưu thời điểm mượn, hạn trả và thời điểm trả thực tế. Trường `returned_at` cho phép nhận giá trị `NULL` khi lượt mượn chưa hoàn tất. Các bản ghi cũ được giữ lại để phục vụ tra cứu lịch sử.
-
-### 7.4. Thiết kế URL theo RESTful
-
-URL sử dụng danh từ số nhiều để biểu diễn tài nguyên. HTTP method xác định thao tác, còn tham số đường dẫn dùng để xác định tài nguyên cụ thể.
-
-Các thao tác nghiệp vụ như trả sách được biểu diễn bằng endpoint riêng để thể hiện rõ hành động và cho phép hệ thống kiểm tra các điều kiện nghiệp vụ liên quan.
-
-## 8. Các tệp bàn giao
-
-- [Tài liệu Resource Design (PDF)](resource-design.pdf)
-- [Sơ đồ ERD (PNG)](diagrams/library-erd.png)
-- [File ERD có thể chỉnh sửa](diagrams/library-erd.drawio)
-- [Book JSON Schema](schemas/book.schema.json)
-- [Member JSON Schema](schemas/member.schema.json)
-- [Loan JSON Schema](schemas/loan.schema.json)
-
-## 9. Kết luận
-
-Bài tập xây dựng mô hình dữ liệu và thiết kế RESTful API cho hệ thống quản lý thư viện trong phạm vi quản lý sách, tác giả, bản sao sách, độc giả và nghiệp vụ mượn/trả.
-
-Thiết kế hướng đến sự nhất quán giữa ERD, Resource Set, URL List và JSON Schema, đồng thời giới hạn phạm vi ở các nghiệp vụ cốt lõi để phù hợp với yêu cầu bài tập.
