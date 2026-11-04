@@ -1,0 +1,313 @@
+# Social Network API – OpenAPI Specification
+
+```yaml
+openapi: 3.1.0
+
+info:
+  title: Social Network API
+  version: 1.0.0
+  description: API for authentication and retrieving social network posts.
+
+servers:
+  - url: https://api.socialnetwork.com/v1
+
+tags:
+  - name: Authentication
+  - name: Posts
+
+paths:
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate a user
+      description: Login using email and password to receive access and refresh tokens.
+      security: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: StrongPassword123
+
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+
+        "400":
+          description: Invalid request format or missing fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        "401":
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        "429":
+          description: Too many login attempts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      description: Exchange a valid refresh token for a new access token.
+      security: []
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+                  description: Valid refresh token
+
+      responses:
+        "200":
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+
+        "400":
+          description: Missing or malformed refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        "401":
+          description: Invalid, expired, revoked or reused refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        "429":
+          description: Too many refresh attempts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+  /posts/{id}:
+    get:
+      tags:
+        - Posts
+      summary: Get a post by ID
+      description: Retrieve a post if the authenticated user has permission to view it.
+
+      security:
+        - BearerAuth:
+            - posts:read
+
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique post identifier
+          schema:
+            type: string
+          example: post_123
+
+      responses:
+        "200":
+          description: Post retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+
+        "400":
+          description: Invalid post ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        "401":
+          description: Missing or invalid access token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        "403":
+          description: Insufficient scope or no permission to access this post
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        "404":
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        "429":
+          description: Too many requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+
+    TokenResponse:
+      type: object
+      required:
+        - access_token
+        - refresh_token
+        - token_type
+        - expires_in
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: integer
+          description: Access token lifetime in seconds
+          example: 900
+        scope:
+          type: string
+          example: posts:read
+
+    Post:
+      type: object
+      required:
+        - id
+        - author_id
+        - content
+        - created_at
+      properties:
+        id:
+          type: string
+          example: post_123
+        author_id:
+          type: string
+          example: user_456
+        content:
+          type: string
+          example: Hello, this is my first post!
+        visibility:
+          type: string
+          enum:
+            - public
+            - private
+          example: public
+        created_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: INVALID_CREDENTIALS
+        message:
+          type: string
+          example: Invalid email or password
+```
+
+## Scope and Authorization Summary
+
+| Endpoint | Required scope | Authentication |
+|---|---|---|
+| POST /auth/login | None | Email + password |
+| POST /auth/refresh | None | Refresh Token |
+| GET /posts/{id} | posts:read | Access Token (JWT) |
+
+**Important authorization rules:**
+
+- Login: Validate credentials and return tokens. Do not reveal whether the email or password was incorrect.
+- Refresh: Validate refresh token, expiration and revocation status. Consider refresh token rotation.
+- Get post: Validate JWT, check `posts:read`, then check whether the user can access the specific post.
+
+A valid scope does not automatically grant access to every post. The API must also enforce object-level authorization to prevent BOLA.
+
+## Error Status Code Summary
+
+| Status | Meaning | Applicable endpoints |
+|---|---|---|
+| 200 | Request successful | All three |
+| 400 | Invalid request or parameters | All three |
+| 401 | Missing/invalid credentials or token | All three |
+| 403 | Insufficient permission | GET /posts/{id} |
+| 404 | Post does not exist | GET /posts/{id} |
+| 429 | Rate limit exceeded | All three |
+| 500 | Internal server error | All three |
