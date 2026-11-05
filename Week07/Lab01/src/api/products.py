@@ -28,7 +28,7 @@ class ProductsList(MethodView):
         db.session.add(product)
         db.session.commit()
 
-        return products
+        return product
 
     @blp.arguments(PaginationSchema, location="query")
     @blp.response(200, ProductListSchema)
