@@ -11,3 +11,5 @@ class Product(db.Model):
     price_cents = db.Column(db.Integer, nullable=False)
     qty_in_stock = db.Column(db.Integer, nullable=False, default=0)
     is_archived = db.Column(db.Boolean, nullable=False, default=False)
+
+    order_items = db.relationship("OrderItem", back_populates="product")

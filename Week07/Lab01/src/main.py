@@ -5,8 +5,9 @@ from sqlalchemy import text
 
 from src.extensions import db, migrate, api
 from src.config import Config
-from src.models import Product
+from src.models import Product, Order, OrderItem
 from src.api.products import blp as products_blp
+from src.api.orders import blp as orders_blp
 
 def create_app():
     app = Flask(__name__)
@@ -16,6 +17,7 @@ def create_app():
     migrate.init_app(app, db)
     api.init_app(app)
     api.register_blueprint(products_blp)
+    api.register_blueprint(orders_blp)
 
     @app.get("/healthz")
     def healthz():
