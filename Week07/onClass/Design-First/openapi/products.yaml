@@ -42,37 +42,37 @@ paths:
         "400":
           description: Invalid request
 
-  components:
-    schemas:
-      ProductInput:
-        type: object
-        required:
-          - name
-          - price
-        properties:
-          name:
-            type: string
-            example: Keyboard
-          price:
-            type: number
-            format: float
-            minimum: 0
-            example: 50
+components:
+  schemas:
+    ProductInput:
+      type: object
+      required:
+        - name
+        - price
+      properties:
+        name:
+          type: string
+          example: Keyboard
+        price:
+          type: number
+          format: float
+          minimum: 0
+          example: 50
 
-      Product:
-        type: object
-        required:
-          - id
-          - name
-          - price
-        properties:
-          id:
-            type: integer
-            example: 1
-          name:
-            type: string
-            example: Laptop
-          price:
-            type: number
-            format: float
-            example: 1500
+    Product:
+      type: object
+      required:
+        - id
+        - name
+        - price
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Laptop
+        price:
+          type: number
+          format: float
+          example: 1500

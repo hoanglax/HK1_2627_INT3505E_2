@@ -1,0 +1,11 @@
+services:
+  code-first:
+    build: ./Code-First
+    ports:
+      - "5001:5001"
+    restart: unless-stopped
+  design-first:
+    build: ./Design-First
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
