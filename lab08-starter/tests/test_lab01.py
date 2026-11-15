@@ -16,6 +16,7 @@ Do not depend on test execution order. Fixtures: client, app, sample_book.
 """
 
 import pytest
+from tools import get_book_schema
 from jsonschema import ValidationError, validate
 
 
@@ -60,27 +61,25 @@ def test_delete_then_get_404(client):
 
     assert get_response.status_code == 404
 
-def test_response_extra_field_blocked():
-    book_schema = {
-        "type": "object",
-        "properties": {
-            "id": {"type": "integer"},
-            "title": {"type": "string"},
-            "author": {"type": "string"},
-            "year": {"type": ["integer", "null"]},
-            "isbn": {"type": ["string", "null"]}
-        },
-        
-        "required": ["id", "title", "author"],
-        "additionalProperties": False
-    }
 
-    response = {
-        "id": 1,
-        "title": "Python Basics",
-        "author": "Hoang",
-        "password_hash": "secret123"
-    }
+
+def test_response_extra_field_blocked(client, sample_book):
+    book_schema = get_book_schema()
+
+    for field_schema in book_schema.get("properties", {}).values():
+        if field_schema.get("nullable") is True:
+            original_type = field_schema["type"]
+            field_schema["type"] = [original_type, "null"]
+            field_schema.pop("nullable", None)
+
+    response = client.get(f"/books/{sample_book}")
+    assert response.status_code == 200
+
+    book = response.get_json()
+    validate(instance=book, schema=book_schema)
+
+    modified_book = book.copy()
+    modified_book["password_hash"] = "secret123"
 
     with pytest.raises(ValidationError):
-        validate(instance=response, schema=book_schema)
+        validate(instance=modified_book, schema=book_schema)
