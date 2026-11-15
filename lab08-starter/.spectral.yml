@@ -1,4 +1,6 @@
-extends: ["spectral:oas"]
+
+extends:
+  - spectral:oas
 
 rules:
   operation-operationId: error
@@ -21,3 +23,32 @@ rules:
       functionOptions:
         values:
           - integer
+
+  response-200-nonempty-schema:
+    description: "Response 200 must define a non-empty schema"
+    message: "Response 200 must have a non-empty schema"
+    severity: error
+    given: "$.paths[*][*].responses['200'].content.*.schema"
+    then:
+      function: schema
+      functionOptions:
+        schema:
+          anyOf:
+            - type: object
+              required: [properties]
+              properties:
+                properties:
+                  type: object
+                  minProperties: 1
+            - type: object
+              required: [items]
+              properties:
+                items:
+                  type: object
+                  minProperties: 1
+            - type: object
+              required: ["$ref"]
+              properties:
+                "$ref":
+                  type: string
+                  minLength: 1
