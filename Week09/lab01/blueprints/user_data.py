@@ -1,3 +1,6 @@
+from threading import Lock
+
+
 USERS = {
     1: {
         "first_name": "Văn",
@@ -10,17 +13,19 @@ USERS = {
         "email": "b@vnu.vn"
     }
 }
-
+_create_lock = Lock()
 def get_user(uid):
     return USERS.get(uid)
 
 def create_user(data):
-    uid = max(USERS.keys(), default=0) + 1
-
-    USERS[uid] = {
+    user = {
         "first_name": data["first_name"],
         "last_name": data["last_name"],
         "email": data["email"]
     }
 
-    return uid, USERS[uid]
+    with _create_lock:
+        uid = max(USERS, default=0) + 1
+        USERS[uid] = user
+
+    return uid, user

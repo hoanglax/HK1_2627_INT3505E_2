@@ -1,46 +1,67 @@
-
 openapi: 3.0.3
-
 info:
   title: User API
   version: 2.0.0
   description: API Versioning Lab 01
-
 servers:
   - url: http://127.0.0.1:5000
-
 paths:
-  /api/v1/{uid}:
+  /api/v1/users/{uid}:
     get:
       summary: Get user v1
+      deprecated: true
       parameters:
-        - name: uid
-          in: path
-          required: true
-          schema:
-            type: integer
+        - $ref: '#/components/parameters/UserId'
       responses:
         '200':
-          description: User with full_name
+          description: User found
+          headers:
+            Sunset:
+              schema:
+                type: string
+              example: 'Thu, 31 Dec 2026 23:59:59 GMT'
+            Deprecation:
+              schema:
+                type: string
+                enum: ['true']
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserV1'
         '404':
           description: User not found
-
-  /api/v2/{uid}:
+          headers:
+            Sunset:
+              schema:
+                type: string
+              example: 'Thu, 31 Dec 2026 23:59:59 GMT'
+            Deprecation:
+              schema:
+                type: string
+                enum: ['true']
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v2/users/{uid}:
     get:
       summary: Get user v2
       parameters:
-        - name: uid
-          in: path
-          required: true
-          schema:
-            type: integer
+        - $ref: '#/components/parameters/UserId'
       responses:
         '200':
-          description: User with first_name and last_name
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserV2'
         '404':
           description: User not found
-
-  /api/v2/:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/v2/users/:
     post:
       summary: Create a new user
       requestBody:
@@ -48,20 +69,65 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - first_name
-                - last_name
-                - email
-              properties:
-                first_name:
-                  type: string
-                last_name:
-                  type: string
-                email:
-                  type: string
+              $ref: '#/components/schemas/NewUser'
       responses:
         '201':
           description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserV2'
         '400':
-          description: Invalid request
+          description: Invalid JSON, missing or invalid fields, or invalid email
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  parameters:
+    UserId:
+      name: uid
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 0
+  schemas:
+    UserV1:
+      type: object
+      required: [id, full_name, email]
+      properties:
+        id:
+          type: integer
+        full_name:
+          type: string
+        email:
+          type: string
+    UserV2:
+      allOf:
+        - $ref: '#/components/schemas/NewUser'
+        - type: object
+          required: [id]
+          properties:
+            id:
+              type: integer
+    NewUser:
+      type: object
+      description: Leading and trailing whitespace is trimmed before validation and storage.
+      required: [first_name, last_name, email]
+      properties:
+        first_name:
+          type: string
+          pattern: '\S'
+        last_name:
+          type: string
+          pattern: '\S'
+        email:
+          type: string
+          pattern: '^\s*[^\s@]+@[^\s@]+\.[^\s@]+\s*$'
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string

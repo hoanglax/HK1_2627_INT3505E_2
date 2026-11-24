@@ -46,6 +46,8 @@ Schema JSON của Book trả `id`, `title`, `author`, `year`, `isbn`. Trong requ
 
 ```bash
 python -m pytest -v
+python -m pytest tests\test_lab01.py -v
+python -m pytest tests\test_lab01.py --cov=app --cov-report=term-missing
 ```
 
 Hai smoke test có sẵn nhằm xác nhận starter hoạt động. Hãy viết **4 test bắt buộc + 1 bonus** trong `tests/test_lab01.py`, theo các TODO trong file. Fixture `app`, `client`, `sample_book` ở `tests/conftest.py`; dùng `get_book_schema()` từ `tools.py` khi cần. Mỗi test có DB riêng, không phụ thuộc thứ tự. Lưu ý: schema Book trong `openapi.yaml` **đang cố ý sai ở trường year** cho Lab 2; muốn validate response mẫu có `year`, cần hoàn thành sửa lỗi đó trước.
@@ -61,6 +63,7 @@ Ba lỗi **cố ý** trong `openapi.yaml`:
 ```bash
 npm install -g @stoplight/spectral-cli
 spectral lint openapi.yaml --ruleset .spectral.yml
+spectral lint openapi.yaml --ruleset .spectral.yml --verbose
 ```
 
 `.spectral.yml` đã có hai rule riêng kiểm tra (2) và (3); `spectral:oas` kiểm tra các quy tắc nền, bao gồm operationId. Hãy sửa 3 lỗi trong spec và **tự bổ sung custom rule** kiểm tra response 200 có schema không rỗng. Lưu ý: Spectral linter không tự đối chiếu code Flask; một spec hợp lệ vẫn có thể khác hành vi thực tế. Hãy dùng pytest + jsonschema để kiểm chứng response.
@@ -75,9 +78,8 @@ File `books-api.postman_collection.json` chứa 5 happy-path requests chạy the
 
 ```bash
 npm install -g newman
-newman run books-api.postman_collection.json \
-  -e postman/local.postman_environment.json \
-  -r cli,junit --reporter-junit-export reports/junit.xml
+newman run postman\books-api.postman_collection.json -e postman\local.postman_environment.json
+newman run postman\books-api.postman_collection.json -e postman\local.postman_environment.json -r cli,junit --reporter-junit-export reports\junit.xml
 ```
 
 Lưu ý: cần chạy server trước. `data.csv` là dữ liệu ví dụ để thực hành data-driven iteration; khi sử dụng `-d data.csv`, collection sẽ lặp theo số hàng. Đừng hard-code credentials/tokens trong file đẩy lên Git.
@@ -88,12 +90,9 @@ Lưu ý: cần chạy server trước. `data.csv` là dữ liệu ví dụ để
 
 ```bash
 mkdir -p reports
-locust -f performance/locustfile.py --headless -H http://127.0.0.1:5000 \
-  -u 10 -r 2 -t 30s --html reports/A.html
-locust -f performance/locustfile.py --headless -H http://127.0.0.1:5000 \
-  -u 50 -r 5 -t 60s --html reports/B.html
-locust -f performance/locustfile.py --headless -H http://127.0.0.1:5000 \
-  -u 200 -r 50 -t 30s --html reports/C.html
+python -m locust -f performance/locustfile.py --headless -H http://127.0.0.1:5000 -u 10 -r 2 -t 30s --html reports/A.html
+python -m locust -f performance/locustfile.py --headless -H http://127.0.0.1:5000 -u 50 -r 5 -t 60s --html reports/B.html
+python -m locust -f performance/locustfile.py --headless -H http://127.0.0.1:5000 -u 200 -r 50 -t 30s --html reports/C.html
 ```
 
 Hoàn thiện TODO `search_by_year` và nếu tạo 1% failure giả lập, **ghi rõ** đó là HTTP 500 do server phát hay client-side `response.failure()` của Locust. Điền `performance/analysis.md` bằng kết quả **đo thực tế**; báo cáo p95, failure rate, RPS, nhận xét giới hạn phép đo. Load test chạy Flask development server + SQLite chỉ có ý nghĩa thực hành, không thể khẳng định SLO production.
